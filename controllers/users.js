@@ -69,10 +69,8 @@ const avatars = async (req, res, next) => {
     const id = req.user.id
     // const avatarURL = await saveAvatarToStatic(req)
     // await updateUserByField((_id: id}, {avatarURL})
-    const {
-      public_id: avatarIdCloud,
-      secure_url: avatarUrl,
-    } = await saveAvatarToCloud(req)
+    const { public_id: avatarIdCloud, secure_url: avatarUrl } =
+      await saveAvatarToCloud(req)
     await updateAvatar(id, avatarUrl, avatarIdCloud)
     return res.json({
       status: 'success',
@@ -97,7 +95,11 @@ const verify = async (req, res, next) => {
       //    code: HttpCode.OK,
       //    message: 'Verification successful!',
       //  })
-      return res.redirect(process.env.FRONT_URL)
+      return res.redirect(
+        process.env.NODE_ENV === 'development'
+          ? process.env.BASE_URL
+          : process.env.CLIENT_URL
+      )
     }
     next(
       res.status(HttpCode.BAD_REQUEST).json({

@@ -14,6 +14,7 @@ const {
   HttpCode,
   JWT_ACCESS_EXPIRE_TIME,
   JWT_REFRESH_EXPIRE_TIME,
+  REFRESH_TOKEN_COOKIE_MAX_AGE,
 } = require('../helpers/constants')
 const EmailService = require('../services/email')
 const SECRET_KEY = process.env.JWT_SECRET_KEY
@@ -79,20 +80,15 @@ const login = async (req, res, next) => {
       })
     }
     const { accessToken, refreshToken } = await createSessionTokens(user._id)
-    // const newSession = await createSession(user._id)
-    // const payload = { uid:user._id, sid: newSession._id }
-    // const accessToken = jwt.sign(payload, SECRET_KEY, {
-    //   expiresIn: JWT_ACCESS_EXPIRE_TIME,
-    // })
-    // const refreshToken = jwt.sign(payload, SECRET_KEY, {
-    //   expiresIn: JWT_REFRESH_EXPIRE_TIME,
-    // })
+    res.cookie('refreshToken', refreshToken, {
+      maxAge: REFRESH_TOKEN_COOKIE_MAX_AGE,
+      httpOnly: true,
+    })
     return res.status(HttpCode.OK).json({
       status: 'success',
       code: HttpCode.OK,
       data: {
         accessToken,
-        refreshToken,
         user: {
           name: user.name !== null ? user.name : user.email,
           email: user.email,
@@ -108,7 +104,7 @@ const login = async (req, res, next) => {
 const logout = async (req, res, next) => {
   try {
     await deleteSession(req.user.sid)
-
+    res.clearCookie('refreshToken')
     return res.status(HttpCode.NO_CONTENT).json({})
   } catch (e) {
     next(e)
@@ -116,11 +112,15 @@ const logout = async (req, res, next) => {
 }
 
 // let originUrl = null
-const googleAuth = async (req, res) => {
+const googleAuth = async (_req, res) => {
   // originUrl = req.headers.origin
   const stringifiedParams = queryString.stringify({
     client_id: process.env.GOOGLE_CLIENT_ID,
-    redirect_uri: `${process.env.BASE_URL}/auth/google-redirect`,
+    redirect_uri: `${
+      process.env.NODE_ENV === 'development'
+        ? process.env.BASE_URL
+        : process.env.CLIENT_URL
+    }/auth/google-redirect`,
     scope: [
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile',
@@ -145,7 +145,11 @@ const googleRedirect = async (req, res) => {
     data: {
       client_id: process.env.GOOGLE_CLIENT_ID,
       client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: `${process.env.BASE_URL}/auth/google-redirect`,
+      redirect_uri: `${
+        process.env.NODE_ENV === 'development'
+          ? process.env.BASE_URL
+          : process.env.CLIENT_URL
+      }/auth/google-redirect`,
       grant_type: 'authorization_code',
       code,
     },
@@ -161,38 +165,47 @@ const googleRedirect = async (req, res) => {
   const { email, name, picture, id } = userData.data
   const user = await findUserByField({ email })
 
-  if (!user) {
-    const newUser = await create({
-      email,
-      verificationToken: null,
-      password: id,
-    })
-    const { accessToken, refreshToken } = await createSessionTokens(newUser._id)
+  const newUser = !user
+    ? await create({
+        email,
+        verificationToken: null,
+        password: id,
+      })
+    : null
 
-    const userPicture = picture || newUser.avatarURL
-    return res.redirect(
-      `${process.env.FRONT_URL}/google-auth?token=${accessToken}&refreshToken=${refreshToken}&email=${email}&name=${name}&picture=${userPicture}`
-    )
-  }
-  const { accessToken, refreshToken } = await createSessionTokens(user._id)
-
-  const userPicture = user.avatarURL || picture
+  const { accessToken, refreshToken } = await createSessionTokens(
+    newUser?._id || user._id
+  )
+  res.cookie('refreshToken', refreshToken, {
+    maxAge: REFRESH_TOKEN_COOKIE_MAX_AGE,
+    httpOnly: true,
+  })
+  const userPicture = user?.avatarURL || picture
   return res.redirect(
-    `${process.env.FRONT_URL}/google-auth?token=${accessToken}&refreshToken=${refreshToken}&email=${email}&name=${name}&picture=${userPicture}`
+    `${
+      process.env.NODE_ENV === 'development'
+        ? process.env.BASE_URL
+        : process.env.CLIENT_URL
+    }/google-auth?token=${accessToken}&email=${email}&name=${name}&picture=${userPicture}`
   )
 }
 
 const refreshToken = async (req, res) => {
   await deleteSession(req.user.sid)
   const user = req.user
+
   const { accessToken, refreshToken } = await createSessionTokens(user._id)
+  // res.clearCookie('refreshToken')
+  res.cookie('refreshToken', refreshToken, {
+    maxAge: REFRESH_TOKEN_COOKIE_MAX_AGE,
+    httpOnly: true,
+  })
 
   return res.status(HttpCode.OK).json({
     status: 'success',
     code: HttpCode.OK,
     data: {
       accessToken,
-      refreshToken,
       user: {
         name: user.name !== null ? user.name : user.email,
         email: user.email,

@@ -1,4 +1,5 @@
 const express = require('express')
+const cookieParser = require('cookie-parser')
 // const path = require('path')
 const swaggerUi = require('swagger-ui-express')
 const swaggerDocument = require('./swagger.json')
@@ -21,15 +22,21 @@ const app = express()
 const formatsLogger = app.get('env') === 'development' ? 'dev' : 'short'
 app.get('env') !== 'test' && app.use(logger(formatsLogger))
 
-app.use(cors())
+app.use(
+  cors()
+  // {
+  // credentials: true,
+  // origin: process.env.FRONT_URL,
+  // }
+)
 app.use(helmet())
 app.use(express.json({ limit: jsonLimit }))
 
 // app.use(express.urlencoded({ extended: false }));
 // app.use(express.static(path.join(__dirname, "public")));
 
+app.use(cookieParser())
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
-
 app.use('/auth', authRouter)
 app.use('/users', usersRouter)
 app.use('/test', testingRouter)

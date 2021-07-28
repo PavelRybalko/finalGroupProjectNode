@@ -20,7 +20,7 @@ router.post('/logout', guard, authController.logout)
 router.get('/google', tryCatchWrapper(authController.googleAuth))
 router.get('/google-redirect', tryCatchWrapper(authController.googleRedirect))
 router.get(
-  '/refresh-token/:refreshToken',
+  '/refresh-token',
   tryCatchWrapper(validateRefreshToken),
   tryCatchWrapper(authController.refreshToken)
 )

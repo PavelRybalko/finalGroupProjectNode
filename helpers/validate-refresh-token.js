@@ -5,7 +5,7 @@ const { HttpCode } = require('./constants')
 const { findUserByField, findSession } = require('../model/users')
 
 const validateRefreshToken = async (req, res, next) => {
-  const { refreshToken } = req.params
+  const { refreshToken } = req.cookies
   // req.body.token || req.query.token || req.headers['x-access-token']
   if (refreshToken) {
     // verifies secret and checks exp
