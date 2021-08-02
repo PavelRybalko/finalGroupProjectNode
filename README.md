@@ -60,3 +60,7 @@
 - Обрабатывает переход по ссылке верификации из письма
 - При положительном результате возвращает ответ `Status: 200 OK, "Verification successful!"` и сбрасывает verificationToken
 - В противном случае возвращает `Status: 400 BAD_REQUEST, "Your verification token is not valid"`
+
+### GET /api-docs
+
+- swagger

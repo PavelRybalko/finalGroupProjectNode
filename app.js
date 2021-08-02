@@ -23,16 +23,18 @@ const formatsLogger = app.get('env') === 'development' ? 'dev' : 'short'
 app.get('env') !== 'test' && app.use(logger(formatsLogger))
 
 app.use(
-  cors()
-  // {
-  // credentials: true,
-  // origin: process.env.FRONT_URL,
-  // }
+  cors({
+    credentials: true,
+    origin:
+      process.env.NODE_ENV === 'development'
+        ? process.env.BASE_URL
+        : process.env.CLIENT_URL,
+  })
 )
 app.use(helmet())
 app.use(express.json({ limit: jsonLimit }))
 
-// app.use(express.urlencoded({ extended: false }));
+// app.use(express.urlencoded({ extended: false }))
 // app.use(express.static(path.join(__dirname, "public")));
 
 app.use(cookieParser())
