@@ -33,10 +33,10 @@ const postResult = async (req, res, next) => {
     let right = 0
     let wrong = 0
     let questions
-    if (nameTest === 'technic') {
+    if (nameTest === 'tech-questions') {
       const data = await listAnswersTechQuestions()
       questions = data
-    } else if (nameTest === 'theoretical') {
+    } else if (nameTest === 'theory-questions') {
       const data = await listAnswersTheoryQuestions()
       questions = data
     }
