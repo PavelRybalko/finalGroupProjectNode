@@ -41,12 +41,15 @@ const postResult = async (req, res, next) => {
       questions = data
     }
 
-    await questions.forEach(({ questionId, rightAnswer }) => {
-      answers.find(({ answerId, answer }, i) => {
-        if (questionId === answerId && rightAnswer === answer) {
+    questions.forEach(({ questionId: questionDbId, rightAnswer }) => {
+      answers.forEach(({ questionId, answer }, i) => {
+        if (questionDbId.toString() === questionId && rightAnswer === answer) {
           result[i + 1] = true
           right += 1
-        } else if (questionId === answerId && rightAnswer !== answer) {
+        } else if (
+          questionDbId.toString() === questionId &&
+          rightAnswer !== answer
+        ) {
           result[i + 1] = false
           wrong += 1
         }
